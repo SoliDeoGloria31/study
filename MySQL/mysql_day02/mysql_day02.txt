@@ -1,0 +1,402 @@
+课程：MySQL关系数据库
+进度：day02
+
+上次内容回顾
+1.数据库基本概念
+    1)数据库管理系统(DBMS):专门管理数据的软件系统，提供了很多功能
+        - 科学、高效的数据存取操作
+        - 提供友好的操作界面
+        - 提供给开发语言访问接口
+        - 提供丰富的工具(备份/恢复,性能优化)
+    2)关系模型概念
+        - 关系：规范的二维表
+               规范：列不能再分、列不能重复
+        - 实体：现实中可以区分的事物
+        - 元组：二维表中的一行称为一个元组
+        - 属性：元组中一列称为属性
+        - 键：  能够区分实体唯一性的属性、属性组合(多个键可构成一组候选键)
+        - 主键：从多个键中选取一个，作为关系(表)中逻辑上唯一确定实体的依据
+               非空、唯一
+2.MySQL操作
+    1)安装：
+        Linux:   mysql-server, mysql-client, libmysqlclient-dev
+        windows: 记住root口令，添加用户 名称/密码，端口
+    2)安装确认:
+        windows: 右击'我的电脑'->属性->服务 (服务管理器)
+                 netstat -an | findstr 3306
+        Linux:   查看端口：netstat - an | grep 3306
+                 管理脚本：/etc/init.d/mysql [status|start|stop|restart]
+                 服务管理：同脚本管理
+                 客户端连接服务器
+                    - mysql(客户端)，mysqld(服务器)
+                    - 连接：
+                        mysql -h主机 -u用户 -p密码 -P端口
+                 库管理：
+                    - 查看库：    show databases;
+                    - 切换库：    use 库名称;
+                    - 查看当前库： select database();
+                    - 创建库：    create database 库名;
+                    - 删除库：    drop database 库名;
+                    - 查看建库语句： show create database 库名称；
+                 表管理：
+                    - 查看库中的表：show tables;
+                    - 创建表：create table 表名
+                              字段1  类型(长度),
+                              字段2  类型(长度)，
+                              ...
+                             ) [设置库属性];
+                    - 查看表结构：desc 表名称
+                    - 查看建表语句： show create table 表名称；
+                 数据操作：
+                    - 插入：
+                        insert into acct values
+                        ('622345000001','Jerry','C00001',1,now(),1,1200)
+
+                        insert into acct values
+                        ('622345000002','Tom','C00002',1,now(),1,2000),
+                        ('622345000003','Steven','C00003',1,now(),1,2600);
+
+                        insert into acct(acct_no,acct_name)
+                        values('622345000004','xiaoli');
+                    - 查询：
+                        select * from acct;
+                        select * from acct where acct_type=1;
+                        select * from acct where acct_type=1 and/or acct_type=2;
+                        select acct_no "账号", acct_name "户名" from acct;   -- 投影运算
+                        select acct_no, balance/10000 from acct;
+
+今天的内容
+1.数据类型
+    1)主要数据类型
+        - 数值类型：整数、浮点数
+        - 字符类型：对应程序语言的字符串
+        - 日期时间类型：now()获取当前时间
+        - 枚举类型：具有固定取值范围
+            例如：性别、账户类型    -- 其范围固定、值不多
+    2)数值类型(**数值注意范围、浮点注意精度**)
+           类型            大小        范围
+        - tinyint        1Byte      0~255(无符号)
+                                    -128~127(有符号)
+        - int/integer    4Byte      0~2^32-1(无符号)
+                                    -2^32~2^32-1(有符号)
+        - bigint         8Byte      0~2^64-1(无符号)
+                                    -2^63~2^63-1(有符号)
+        e.g. 数值类型使用示例
+        create table num_test(
+            -- 显示3位无符号整数，左边0填充
+            card_type int(3) unsigned zerofill,
+            dist_rate decimal(10,2)
+        );
+        insert into num_test values(1,0.88);
+        insert into num_test values(100,23.456);
+        insert into num_test values(10000,23.444);
+        insert into num_test values(2,3);
+
+        说明：
+            - 当字段使用unsigned(无符号)修饰时，值只能是整数
+            - 定义整数时指定长度，仅仅是指定显示宽度
+              存储的值的大小由数据类型决定
+            - zerofill表示长度不足时左边用0填充
+            - 整数值超过类型的范围，插入时会报错
+            - 当浮点数小数部分超过指定长度，自动进行四舍五入处理
+            - 浮点数插入时，一定要关注精度！！！
+    3)字符串类型
+        - 定长字符串：char       -- 使用较少
+            最大存储255个字符
+            如果长度不足指定的长度，右边以空格填充
+            如果不指定长度，默认长度为1
+            超过长度，无法存入
+        - 变长字符串：varchar    -- 常用
+            最大能存储65535个字符(2^16-1)
+            按数据实际大小分配存储空间
+            超过长度，无法存入
+        - 大文本类型：text
+            字符数大于65535时使用
+        - char 和 varchar特点比较
+            char类型性能校高，但浪费存储空间
+            varchar节省存储空间，但效率低于char
+            一般情况下使用varchar
+    4)枚举
+        - enum:从指定的值中选取一个
+        - set: 从指定的值中选取一个或多个                     -- set中可以同时选多个，中间以,逗号连接，但不能有空格
+
+        e.g. 创建含有枚举类型字段的表
+            create table enum_test(
+                name varchar(32),
+                sex  enum('boy','girl'),
+                course set('music','dance','paint')      -- set中可以同时选多个，中间以,逗号连接，但不能有空格
+            );
+            insert into enum_test values
+            ('Jerry','girl','music,dance');
+        说明：插入指定范围外的值会报错
+    5)日期时间类型  ***重要，用的多***
+        - 日期：date, '1000-01-01'~'9999-12-31'
+        - 时间：time, '00:00:00'~'23:59:59'
+        - 日期时间：datetime, '1000-01-01 00:00:00'~'9999-12-31 23:59:59'
+        - 时间戳：timestamp,
+
+        - 相关函数
+          now()/sysdate()        取系统时间
+          curdate()/curtime()    取当前日期/时间
+          year()/month()/day()   单独去日期中年月日
+          date()/time()          单独取日期时间中的日期/时间
+          e.g.
+            mysql> select now(),sysdate();
+            +---------------------+---------------------+
+            | now()               | sysdate()           |
+            +---------------------+---------------------+
+            | 2019-01-30 11:20:10 | 2019-01-30 11:20:10 |
+            +---------------------+---------------------+
+
+            mysql> select year(now()),month(now()),day(now());
+            +-------------+--------------+------------+
+            | year(now()) | month(now()) | day(now()) |
+            +-------------+--------------+------------+
+            |        2019 |            1 |         30 |
+            +-------------+--------------+------------+
+
+            mysql> select date(now()), time(now());
+            +-------------+-------------+
+            | date(now()) | time(now()) |
+            +-------------+-------------+
+            | 2019-01-30  | 11:24:43    |
+            +-------------+-------------+
+
+2.修改记录
+    1)语法格式
+        update 表名
+            set 字段1 = 值1，
+                字段2 = 值2，
+                ...           -- 最后一个不加,逗号
+        where 条件表达式        -- 若没有where语句，则为全部更新，特别容易把数据改坏掉
+    2)示例
+        e.g. 修改某个账户的状态
+            update acct
+               set status = 2
+             where acct_no = '622345000001';
+
+        e.g. 修改多个值
+            update acct
+               set status = 3,
+                   balance = balance -100        -- 不能用 -= 方法
+             where acct_no = '622345000001'
+    3)注意事项
+        限定好条件！！！
+        一开始用select查询相关数据是否是要修改的数据
+        如果不使用where限定条件，则修改所有数据！！！
+        修改的值类型要和定义的值类型一致
+
+3.数据删除
+    1)语法：
+        delete from 表名 where 条件
+    2)示例
+        e.g. 删除某个账号的数据
+            delete from acct
+            where acct_no is NULL;   -- 空值，使用 is NULL 和 is not NULL!!  不可用=等号！！！
+    3)注意事项
+        限定好条件！！！
+        删除之前做好备份！！！
+
+4.比较运算符
+    1)比较运算符：> < >= <= <>(!=) =   -- 注意：没有==  !!!
+        e.g. 查询余额大于2000.00的记录
+            select * from acct
+            where balance > 2000;
+
+        e.g. 查询账户类型不为2的记录
+            select * from acct
+            where acct_type != 2;    -- 或用 <>
+    2)逻辑运算符
+        - and：多个条件同时满足          -- and 优先级高于 or
+        - or： 多个条件至少满足一个
+        e.g. 多个条件的组合
+            select * from acct
+            where (
+                acct_name = 'Jerry' or
+                acct_name = 'Tom'   or
+                acct_name = 'Dekie')
+            and status = 2;
+    3)范围比较
+        - between..and...:在..与...之间  -- [..,...] 包含两头
+        - in: 在某个集合内
+        - not in: 不在某个集合内
+
+        e.g. 查询所有金额在3000~6000之间的记录
+            select * from acct
+            where balance between 3000 and 6000;
+            等价于：
+            select * from acct
+            where balance >= 3000
+            and   balance <= 6000;
+            !!!不可使用：
+            where 3000 <= balance <= 6000;      -- mysql 不支持此语法，结果全部显示
+
+        e.g. 利用in操作查询指定户名的账户
+            select * from acct
+            where acct_name in ('Jerry','Tom','Dekie');
+    4)模糊查询
+        - 格式：where 字段名称 like 通配字串
+        - 通配符
+            单个下划线 _ 匹配单个字符
+            百分号 % 匹配任意个字符
+
+        e.g. 查询账户名称以D开头的记录
+            select acct_no, acct_name from acct
+            where acct_name like 'D%';
+
+        e.g. 查询账户名称以D开头，以s结尾的记录
+            select acct_no, acct_name from acct
+            where acct_name like 'D%s';
+
+        e.g. 查询账户名称包含k字符的记录
+            select acct_no, acct_name from acct
+            where acct_name like '%k%';
+    5)空/非空判断
+        - 判断为空：is null
+        - 判断非空：is not null
+
+        e.g. 查询acct_type为空/非空的记录
+            select * from acct
+            where acct_type is null;
+
+            select * from acct
+            where acct_type is not null;
+
+5.查询字句：排序、分组、筛选
+    1)order by 子句
+        作用：将查询结果按照某个字段排序
+        格式：order by 排序字段 [ASC/DESC]    -- 默认 ASC 升序
+             ASC  - 表示升序
+             DESC - 表示降序
+
+        e.g. 查询所有账户信息，按照余额降序排列
+            select acct_no,acct_name,balance from acct
+            order by balance desc;
+    2)limit子句
+        作用：限定查询记过显示的笔数
+        格式：limit n       -- 只显示前面 n 笔
+             limit m,n     -- 从第 m 笔显示，共显示 n 笔   不包含 m !!!从0开始数
+
+        e.g. 显示账户信息前3笔
+            select acct_no, acct_name, balance from acct
+            limit 3;
+
+            select acct_no, acct_name, balance from acct
+            order by balance desc limit 3;
+
+            select acct_no, acct_name, balance from acct
+            order by balance desc limit 1,3;
+            * 经常用这种发法进行分页显示
+            1： select * from page_demo limit 0,3;
+            2： select * from page_demo limit 3,3;
+            3： select * from page_demo limit 6,3;
+            4： select * from page_demo limit 9,3;
+            页数从1开始，第N页的查询语句：
+            m = (页码 - 1)*每页笔数
+            n = 每页笔数
+            select * from page_demo
+            limit m,n
+    3)聚合函数
+        - max/min：查询最大/最小值
+            e.g. 查询余额最大值
+                select max(balance) from acct;
+        - avg：求平均值
+            e.g. 求所有账户余额的平均值
+                select avg(balance) from acct;
+        - sum：求和
+            e.g. 求所有账户余额的总和
+                select sum(balance) from acct;
+
+        - count：统计记录笔数
+            e.g. 统计账户数据
+                select count(*) from acct;
+            * 注意：count后的括号中，跟字段名称
+                   该字段值为空的数据不参与统计！！！
+    4)group by 子句               -- 不可用 where子句 进行过滤筛选，而用 having子句
+        - 作用：对结果进行分组，通常和聚合函数配合使用
+        - 格式：group by 分组字段名称
+        - 示例：
+            e.g. 分组统计各状态账户的数量
+                select status "状态", count(*) "数量"
+                from acct
+                group by status;
+                +--------+--------+
+                | 状态    | 数量   |
+                +--------+--------+
+                |      1 |      3 |
+                |      3 |      1 |
+                +--------+--------+
+
+                select status "状态",
+                    acct_type "类型",
+                     count(*) "数量"
+                from acct
+                group by status,acct_type;
+          注意：根据那些字段分组，则需要先将这些字段查询出来
+            e.g. 统计各类型账户中，余额最大值
+                select max(balance),acct_type
+                from acct
+                group by acct_type;
+    5)having 子句
+        - 作用：对分组聚合的结果进行过滤
+               需要和 group by 子句配合使用
+        - 示例：
+            e.g. 按照账户类型统计余额总和，过滤掉账户类型为空(NULL)的数据
+                select acct_type, sum(balance)
+                from acct
+                -- where acct_type in (1,2,3,4)
+                group by acct_type
+                having acct_type is not null
+                order by acct_type desc
+                limit 0,2;
+        - 执行顺序： ***难点***
+            step1: from acct
+                   首先执行 from 语句，找到数据源
+            step2: where
+                   执行 where 子句，选出满足条件的数据
+            step3: group by acct_type
+                   按照指定字段分组
+            step4: sum(balance), acct_type
+                   按照分组进行聚合
+            step5: having acct_type is null
+                   对分组聚合后的数据进行过滤
+            step6: order by acct_type desc
+                   排序
+            step7: limit
+                   限制显示笔数
+
+作业：
+作业：
+1. 创建数据库eshop，并指定为utf8编码
+2. 创建订单表(orders，utf8字符集)，包含
+   如下字段
+   order_id    订单编号，字符串，32位
+   cust_id     客户编号，字符串，32位
+   order_date  下单时间，datetime类型
+   status      订单状态，枚举类型，枚举范围
+               ('1','2','3','4','5','6','9')
+               1-待付款，2-待发货
+			   3-已发货，4-已收货
+			   5-申请退货，6-已退货
+			   9-废弃
+   products_num 包含的商品数量，整数型
+   amt         订单总金额，浮点，两位小数
+
+3. 在orders表中至少插入5笔数据
+   数据看上去尽量真实
+
+4. 编写SQL语句，实现如下功能：
+  1）查找所有待付款订单
+  2）查找所有已发货、已收货、申请退货的订单
+  3）查找某个客户待发货的订单
+  4）根据订单编号，查找下单日期、订单状态
+  5）查找某个客户所有订单，按下单时间倒序排列
+  6）统计每种状态订单笔数
+  7）查询订单金额最大值,最小值,平均值,总金额
+  8）查询金额最大的前3笔订单
+  9）修改某个订单状态为“已收货”
+  10）删除已废弃的订单
+
+
+
+

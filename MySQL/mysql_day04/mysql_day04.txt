@@ -1,0 +1,260 @@
+课程：MySQL关系数据库
+进度：day04
+
+上次内容回顾
+1.约束
+    1)什么是约束：数据库层面提供的数据检查规则，目的保证数据的完整性、一致性、正确性。这些规则是强制性的
+    2)类型：
+        非空 not null
+        唯一性 unique
+        主键 primary key
+        默认值 default xx
+        自增长 auto_increment
+        外键约束 foreign key
+            参照完整性
+2.索引
+    1)什么是索引：提高查询效率
+    2)原理：避免全表扫描
+    3)类型：
+        普通索引 index、唯一索引 unique
+        单列索引、组合索引
+    4)优缺点：
+        - 优点：
+          提高查询效率
+          唯一索引能够保证数据唯一性
+          在使用分组、排序等子句时，能提高效率
+        - 缺点：
+          索引需要额外的存储空间
+          维护索引结构需要额外的开销
+          会降低增、删、改的效率
+    5)索引使用原则
+        * 合宜
+        - 在经常作为查询条件的字段上建立索引
+        - 主键和唯一索引查询效率较高
+        - 在经常排序的字段上使用索引
+
+        * 不合宜
+        - 使用恰当索引，索引不是越多越好
+        - 避免对经常更新的表使用过多索引
+        - 字段值太少不宜使用索引(如 性别、状态)
+        - 数据量太少不适合使用索引
+        - 二进制类型字段不适合使用索引
+
+今天内容
+1.数据的导入、导出
+    1)导出
+        - 格式：
+            select 查询语句
+            into outfile '文件名称'
+            fields terminated by '字段分割符'
+            lines terminated by '行分割符'
+        - 示例：导出acct表中数据
+            step1: 查看secure_file_priv 变量值
+                mysql> show variables like 'secure_file%';
+                +------------------+-----------------------+
+                | Variable_name    | Value                 |
+                +------------------+-----------------------+
+                | secure_file_priv | /var/lib/mysql-files/ |
+                +------------------+-----------------------+
+            step2: 执行导出
+                select * from acct
+                into outfile
+                '/var/lib/mysql-files/acct.csv'
+                fields terminated by ','
+                lines terminated by '\n';
+            step3: 查看导出结果(Linux命令行中执行)
+                sudo cat /var/lib/mysql-files/acct.csv
+    2)导入
+        - 格式：
+            load data infile '文件路径'
+            into table 表名称
+            fields terminated by '字段分割符'
+            lines terminated by '行分割符'
+        - 示例：
+            load data infile
+            '/var/lib/mysql-files/acct.csv'
+            into table acct
+            fields terminated by ','
+            lines terminated by '\n'
+
+2.子查询(重点)
+    1)什么是子查询(嵌套查询)
+        一个查询语句中嵌套了另一个查询语句，也叫嵌套查询，
+        例如：
+            select * from acct
+            where cust_no in (     -- 外层查询
+                select cust_no from customer
+                where status = 1   -- 子查询
+            );
+        说明：
+            括号中的部分称为子查询
+            子查询返回一个集合
+            子查询的结果要和条件要求匹配
+            先执行子查询，再执行外层查询
+            子查询只执行一遍
+    2)使用子查询的情况：一个查询语句无法实现或实现不方便，使用子查询
+    3)单表子查询：子查询、外层查询是一个表
+        - 语法：
+            select 字段列表 from 表A where 条件
+            (select 字段列表 from 表A)
+        - 示例：查询账户表中，余额大于平均余额的账户
+            select * from acct
+            where balance >
+            (select avg(balance) from acct);
+    4)多表子查询：子查询、外层查询非同一个表
+        - 语法：
+            select 字段列表 from 表A where 条件
+            (select 字段列表 from 表B where 条件)
+        - 示例：
+            - 查询所有发生过交易的账户信息     in
+                select * from acct where acct_no in
+                (select acct_no from acct_trans_detail);
+            - 查询所有没有发生过交易的账户信息  not in
+                select * from acct where acct_no in
+                (select acct_no from acct_trans_detail);
+            - 查询发生过1500元以上交易金额的账户
+                select * from acct where acct_no in
+                (select acct_no from acct_trans_detail where amt>=1500);
+
+3.连接查询(联合查询)  ***重点、难点***
+    1)什么是连接查询：将两个(或以上)的表连接起来，得到一个查询结果(一个表)
+    2)什么情况下使用联合查询：当从一个表中无法查询到想要的全部数据时使用
+      (前提是多表之间有关联关系)
+    3)格式：
+        select 字段列表 from 表A,表B
+        where 关联条件                       -- 如果关联不正确，产生笛卡尔积
+
+        * 错误示范
+        select a.acct_no,a.balance,b.amt    -- 产生笛卡尔积
+        from acct a, acct_trans_detail b;   -- a,b 为简称
+
+        * 正确示范
+        select a.acct_no,a.balance,b.amt
+        from acct a, acct_trans_detail b;   -- a,b 为简称
+        where a.acct_no = b.acct_no;        -- 关联条件
+
+    4)笛卡尔积  -- 列出所有组合的可能情况
+        - 定义：两个集合的乘积，表示用集合中的元素两两组合，产生新的集合
+        - 意义：表示两个集合所有组合的可能
+            如：A集合表示学生，B集合表示课程
+               A*B 表示所有学生选课的可能组合
+
+               A集合表示所有声母，B表示所有韵母
+               A*B表示所有发音的可能组合
+        - 笛卡尔积和关系(二维表)：
+            笛卡尔积中包含不存在、无意义的组合
+            将这部分组合排除，就得到关系(二维表)
+    5)连接的分类  inner/left/right join
+        - 内连接：没有匹配(或关联)到的记录不显示     -- 若要保存到物理表里，则前面加 create table xxx 创建表即可
+            - 格式：select 字段列表
+                   from 表A inner join 表B
+                   on 关联条件
+            - 示例：查询账户、户名、交易日期、交易金额
+                select a.acct_no, a.acct_name, b.trans_date, b.amt
+                from acct a inner join acct_trans_detail b
+                on a.cust_no = b.cust_no;
+            - 课堂练习：
+                编写一个查询语句，从accthe customer表做内连接查询，查询记过包含的字段有：
+                acct_no     acct_name    cust_no   tel_no
+                * 方法一
+                select a.acct_no,a.acct_name,a.cust_no,b.tel_no
+                from acct a inner join customer b
+                on a.cust_no = b.cust_no;
+                * 方法二
+                select a.acct_no,a.acct_name,a.cust_no,b.tel_no
+                from acct a, customer b
+                where a.cust_no = b.cust_no;
+        - 外连接：分为左连接、右连接
+            - 左连接：左表为主(第一个表)，左表的数据全部显示，右表的数据去匹配。
+                     如果匹配到，将右边字段的值连接在后面，
+                     如果没有匹配到，则填NULL
+                - 格式：
+                    select 字段列表
+                    from 表A left join 表B
+                    on 关联条件
+                - 示例：查询账户、户名、交易日期、交易金额，如果某账户没有交易明细，则交易日期、交易金额字段填写空值
+                    select a.acct_no,a.acct_name,b.trans_date,b.amt
+                    from acct a left join acct_trans_detail b
+                    on a.acct_no = b.trans_sn;
+                - 课堂练习：
+                    编写一个查询语句，从accthe customer表做左连接(acct为左表)查询，查询记过包含的字段有：
+                    acct_no     acct_name    cust_no   tel_no
+
+                    select a.acct_no,a.acct_name,a.cust_no,b.tel_no
+                    from acct a left join customer b
+                    on a.cust_no = b.cust_no;
+            - 右连接：
+                - 右连接：右表为主(第二个表)，右表的数据全部显示，左表的数据去匹配。
+                     如果匹配到，将左边字段的值连接在后面，
+                     如果没有匹配到，则填NULL
+                - 格式：
+                    select 字段列表
+                    from 表A right join 表B
+                    on 关联条件
+                - 示例：查询账户、户名、交易日期、交易金额，如果某账户没有交易明细，则交易日期、交易金额字段填写空值
+                    select a.acct_no,a.acct_name,b.trans_date,b.amt
+                    from acct a right join acct_trans_detail b
+                    on a.acct_no = b.trans_sn;
+                - 课堂练习：
+                    编写一个查询语句，从accthe customer表做右连接(customer为右表)查询，查询记过包含的字段有：
+                    acct_no     acct_name    cust_no   tel_no
+
+                    select a.acct_no,a.acct_name,a.cust_no,b.tel_no
+                    from acct a right join customer b
+                    on a.cust_no = b.cust_no;
+
+4.权限管理
+    1)权限：用户可以进行哪些操作
+    2)分类
+        - 用户类：创建/删除用户，给用户授权
+        - 库/表操作：创建/删除/修改库
+                   创建/删除/修改表
+        - 数据操作：增、删、改、查
+    3)权限用户分类
+        - root: 最高权限用户，可以执行所有操作
+        - 大权限用户：可以执行数据库大部分操作
+        - 小权限用户：只能查询
+    4)权限表：MySQL中存放设置表
+        - user表：最重要的权限表，记录允许连接到服务器的账号、权限信息
+        - db表：记录授权库的信息
+        - table_priv表：记录授权表的信息
+        - columns_priv表：记录授权字段的信息
+    5)如何授权
+        - 语法：
+          grant 权限列表 on 库名.表名
+          to '用户名'@'客户端地址'
+          [identified by '密码']
+          [with grant option]
+        - 说明：
+          权限列表：用户可以执行的操作
+            all privileges: 所有权限
+            select: 表示select单个权限
+            select,update,delete,...: 分别制定权限
+          库名.表名：
+            *.*           表示所有库下所有表
+            bank.acct     表示bank库下acct表
+            bank.*        表示bank库下所有表
+          客户端地址
+            %             表示所有客户端
+            localhost     表示本机
+            192.168.0.5   表示此指定IP地址的机器
+          with grant option    对其他用户授权权限
+
+          示例1：对Tom用户授权，能对所有库、所有表进行查询，限定只能从本机登陆
+                并将密码设置为'123456'
+                    grant select on *.* to 'Tom'@'localhost'
+                    identified by '123456';
+
+                    Flush PRIVILEGES;        -- 刷新权限并生效
+                -- 重写用Tom登陆、执行查询、插入验证
+                -- 查看user表中的权限，首先进入mysql库
+                    select * from user where user='Tom' \G;   -- \G 表示竖型表示
+          课堂练习：对bank_user用户授权，能对bank库下所有表增、删、改、查，限定能从任意客户端登陆，并将密码设置为'123456'
+                grant all privileges on bank.* to 'bank_user'@'%';
+
+                flush privileges;
+
+
+
+
+

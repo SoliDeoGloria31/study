@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebResourcesPaths">
+    <contentEntries>
+      <entry url="file://$PROJECT_DIR$">
+        <entryData>
+          <resourceRoots>
+            <path value="file://$PROJECT_DIR$" />
+            <path value="file://$PROJECT_DIR$/day01" />
+            <path value="file://$PROJECT_DIR$/day02" />
+            <path value="file://$PROJECT_DIR$/day03" />
+            <path value="file://$PROJECT_DIR$/day04" />
+            <path value="file://$PROJECT_DIR$/day05" />
+            <path value="file://$PROJECT_DIR$/day06" />
+            <path value="file://$PROJECT_DIR$/day07" />
+            <path value="file://$PROJECT_DIR$/day08" />
+            <path value="file://$PROJECT_DIR$/day09" />
+            <path value="file://$PROJECT_DIR$/day10" />
+            <path value="file://$PROJECT_DIR$/day11" />
+            <path value="file://$PROJECT_DIR$/day12" />
+            <path value="file://$PROJECT_DIR$/day13" />
+            <path value="file://$PROJECT_DIR$/day14" />
+            <path value="file://$PROJECT_DIR$/day15" />
+            <path value="file://$PROJECT_DIR$/day16" />
+            <path value="file://$PROJECT_DIR$/day16/student_project" />
+          </resourceRoots>
+        </entryData>
+      </entry>
+    </contentEntries>
+  </component>
+</project>

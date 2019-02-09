@@ -1,0 +1,133 @@
+1.numpy 属性
+    ndim: 维度
+    shape: 行数和列数
+    size: 元素个数
+2.numpy 的创建 array
+    array: 创建数组
+    dtype: 指定数据类型
+    zeros: 创建数据全为0
+    ones:  创建数据全为1
+    empty: 创建数据接近0
+    arange:  按指定范围创建数据
+    linspace: 创建线段
+3.numpy 基础运算
+    - 矩阵乘法
+        a = np.array([[1, 1], [0, 1]])
+        b = np.arange(4).reshape((2, 2))
+
+        c = a * b                # 对应位置运算
+        c_dot = np.dot(a, b)     # 矩阵运算：矩阵乘法
+        c_dot_2 = a.dot(b)       # 与上步等价
+
+        print(a)
+        print(b)
+        print(c)
+        print(c_dot)
+        print(c_dot_2)
+
+        结果：
+        [[1 1]
+         [0 1]]
+        [[0 1]
+         [2 3]]
+        [[0 1]
+         [0 3]]
+        [[2 4]
+         [2 3]]
+         [[2 4]
+         [2 3]]
+    - 统计
+        a = np.random.random((2, 4))
+        print(a)
+        print(np.sum(a))
+        print(np.sum(a, axis=0))   # 每列求和
+        print(np.sum(a, axis=1))   # 每行求和
+        print(np.min(a))
+        print(np.max(a))
+
+        import numpy as np
+
+        A = np.arange(2,14).reshape(3,4)
+        print(A)
+
+        print(np.argmin(A))   # 最小值的索引
+        print(np.argmax(A))   # 最大值得索引
+        print(np.mean(A))     # 求平均值，以下三行等价
+        print(A.mean())
+        print(np.average(A))
+
+        print(np.median(A))   # 中位数
+        print(np.cumsum(A))   # 累加，类似于斐波拉契数列
+        print(np.diff(A))     # 差值
+
+        print(np.nonzero(A))  # 找非零，以下为 行数、列数的数组
+        # (array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]), array([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]))
+
+        print(np.sort(A))     # 排序
+
+        print(np.transpose(A))  # 矩阵反向(转置)
+        print(A.T)              # 与上行等价
+
+        print(np.clip(A,5,9))   # Array指的是将要被执行用的矩阵，而后面的最小值最大值则用于让函数判断矩阵中元素是否有比最小值小的或者比最大值大的元素，并将这些指定的元素转换为最小值或者最大值。
+4.numpy 索引
+    import numpy as np
+    A = np.arange(3, 15).reshape((3, 4))
+    print(A)
+    print(A[2])      # 按行索引，第3行
+    print(A[1][1])   # A的第2行第2列数字
+    print(A[1, 1])   # 与上行等价
+    print(A[:, 1])   # 第2列
+
+
+    import numpy as np
+
+    A = np.arange(3, 15).reshape((3, 4))
+    print(A)
+    print(A[2])      # 按行索引
+    print(A[1][1])   # A的第2行第2列数字
+    print(A[1, 1])   # 与上行等价
+    print(A[:, 1])   # 第2列
+
+    for column in A.T:  # 对A.T按行索引，等价于对A按列索引
+        print(column)
+
+    for row in A:       # 对A按行索引
+        print(row)
+
+    print(A.flatten())  # flatten是一个展开性质的函数，将多维的矩阵进行展开成1行的数列。而flat是一个迭代器，本身是一个object属性
+    for item in A.flat:
+        print(item)
+5.numpy array 合并
+    import numpy as np
+
+    A = np.array([1, 1, 1])
+    B = np.array([2, 2, 2])
+
+    print(np.vstack((A, B)))   # vertical stack 上下合并
+
+    C = np.vstack((A, B))      # vertical stack   上下合并
+    D = np.hstack((A, B))      # horizontal stack 左右合并
+    print(D)
+    print(A.shape, D.shape)
+6.numpy array 分割
+    import numpy as np
+
+    A = np.arange(12).reshape(3, 4)
+    print(A)
+
+    print(np.split(A, 2, axis=1))  # 对每行分割，每行分为2段，等量分割
+    # [array([[0, 1],
+    #        [4, 5],
+    #        [8, 9]]), array([[ 2,  3],
+    #        [ 6,  7],
+    #        [10, 11]])]
+
+    print(np.array_split(A, 3, axis=1))  # 对每行分割，每行分为3段，不等量分割
+    # [array([[0, 1],
+    #        [4, 5],
+    #        [8, 9]]), array([[ 2],
+    #        [ 6],
+    #        [10]]), array([[ 3],
+    #        [ 7],
+    #        [11]])]
+7.numpy 的 copy & deep copy
